@@ -1,0 +1,12 @@
+{
+  "id": "evt_def456",
+  "trace_id": "tr_550e8400e29b",
+  "timestamp": "2025-03-10T14:35:00Z",
+  "model_type": "llm",
+  "model_id": "clinical-llm-1.0",
+  "vendor_id": "docu-ai",
+  "patient_id_hash": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+  "provider_id_hash": "d4e5f6789012345678901234567890abcdef1234567890abcdef1234567890",
+  "interaction_type": "summarization",
+  "output_token_count": 200
+}
