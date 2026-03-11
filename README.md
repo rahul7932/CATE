@@ -67,32 +67,52 @@ Send with each request (headers or body):
 | `X-CATE-Patient-ID-Hash` | Patient hash |
 | `X-CATE-Provider-ID-Hash` | Provider hash |
 
-### Vendor: Log events
+### Vendor: Pull headers and log events
+
+Extract CATE headers from the incoming request, then pass them into the event:
 
 ```python
-from cate import create_trad_ml_event, create_llm_event
+from cate import log_cate_trad_ml, log_cate_llm
 
-# Traditional ML
-event = create_trad_ml_event(
-    trace_id="tr_550e8400e29b",
-    patient_id_hash="a1b2c3...",
-    provider_id_hash="d4e5f6...",
+# Pull CATE context from request headers (hospital sends these)
+trace_id = request.headers.get("X-CATE-Trace-ID")
+patient_id_hash = request.headers.get("X-CATE-Patient-ID-Hash")
+provider_id_hash = request.headers.get("X-CATE-Provider-ID-Hash")
+
+# Run your model, get prediction...
+prediction = model.predict(input_data)
+
+# Log event — pass through the header values
+event = log_cate_trad_ml(
+    trace_id=trace_id,
+    patient_id_hash=patient_id_hash,
+    provider_id_hash=provider_id_hash,
     model_id="sepsis-v2",
     vendor_id="acme",
     task_type="risk_prediction",
-    output_label="high_risk",
-    output_probability=0.87,
+    output_label=prediction["label"],
+    output_probability=prediction["probability"],
 )
+# Send event to your audit/collector
+```
 
-# LLM
-event = create_llm_event(
-    trace_id="tr_550e8400e29b",
-    patient_id_hash="a1b2c3...",
-    provider_id_hash="d4e5f6...",
+LLM example:
+
+```python
+trace_id = request.headers.get("X-CATE-Trace-ID")
+patient_id_hash = request.headers.get("X-CATE-Patient-ID-Hash")
+provider_id_hash = request.headers.get("X-CATE-Provider-ID-Hash")
+
+response = llm.generate(prompt)
+
+event = log_cate_llm(
+    trace_id=trace_id,
+    patient_id_hash=patient_id_hash,
+    provider_id_hash=provider_id_hash,
     model_id="clinical-llm-1.0",
     vendor_id="docu-ai",
     interaction_type="summarization",
-    output_token_count=200,
+    output_token_count=len(response.split()),
 )
 ```
 
@@ -154,7 +174,9 @@ CATE/
 │   └── __init__.py          # Python SDK
 ├── examples/
 │   ├── trad-ml.json
-│   └── llm.json
+│   ├── llm.json
+│   ├── vendor_trad_ml.py    # Pull headers → create event
+│   └── vendor_llm.py       # Pull headers → create event
 └── tests/
 ```
 

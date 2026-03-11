@@ -85,7 +85,7 @@ def generate_event_id() -> str:
     return f"evt_{uuid.uuid4().hex[:12]}"
 
 
-def create_trad_ml_event(
+def log_cate_trad_ml(
     trace_id: str,
     patient_id_hash: str,
     provider_id_hash: str,
@@ -99,7 +99,7 @@ def create_trad_ml_event(
     output_probability: Optional[float] = None,
 ) -> dict[str, Any]:
     """
-    Create a Traditional ML event.
+    Log a CATE Traditional ML event.
 
     Args:
         trace_id: From hospital (session identifier)
@@ -133,7 +133,7 @@ def create_trad_ml_event(
     return event
 
 
-def create_llm_event(
+def log_cate_llm(
     trace_id: str,
     patient_id_hash: str,
     provider_id_hash: str,
@@ -146,7 +146,7 @@ def create_llm_event(
     output_token_count: Optional[int] = None,
 ) -> dict[str, Any]:
     """
-    Create a Clinical LLM event.
+    Log a CATE LLM event.
 
     Args:
         trace_id: From hospital (session identifier)
@@ -257,8 +257,8 @@ __all__ = [
     "compute_provider_hash",
     "generate_trace_id",
     "generate_event_id",
-    "create_trad_ml_event",
-    "create_llm_event",
+    "log_cate_trad_ml",
+    "log_cate_llm",
     "build_trace",
     "validate_event",
     "MODEL_TYPES",
