@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cate"
+version = "0.1.0"
+description = "Clinical AI Telemetry - provenance logging for clinical AI interactions"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.0"
+authors = [{ name = "CATE" }]
+keywords = ["clinical", "healthcare", "ai", "telemetry", "provenance", "audit"]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cate*"]

@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cate-spec.org/schemas/event.schema.json",
+  "title": "CATE Event",
+  "description": "A single clinical AI interaction (trad ML or LLM)",
+  "type": "object",
+  "required": ["id", "trace_id", "timestamp", "model_type", "model_id", "vendor_id", "patient_id_hash", "provider_id_hash"],
+  "properties": {
+    "id": { "type": "string", "description": "Unique event ID" },
+    "trace_id": { "type": "string", "description": "Links event to trace (from hospital)" },
+    "timestamp": { "type": "string", "format": "date-time", "description": "ISO 8601" },
+    "model_type": { "type": "string", "enum": ["trad_ml", "llm"] },
+    "model_id": { "type": "string", "description": "Model identifier" },
+    "vendor_id": { "type": "string", "description": "Vendor/system" },
+    "patient_id_hash": { "type": "string", "description": "Supplied by caller; vendor passes through" },
+    "provider_id_hash": { "type": "string", "description": "Supplied by caller; vendor passes through" },
+    "task_type": {
+      "type": "string",
+      "enum": ["diagnosis", "risk_prediction", "treatment_recommendation", "other"],
+      "description": "Trad ML only"
+    },
+    "output_label": { "type": "string", "description": "Trad ML: predicted label" },
+    "output_probability": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Trad ML: 0.0-1.0 (optional)"
+    },
+    "interaction_type": {
+      "type": "string",
+      "enum": ["summarization", "drafting", "qa", "documentation", "other"],
+      "description": "LLM only"
+    },
+    "output_token_count": { "type": "number", "minimum": 0, "description": "LLM only (optional)" }
+  },
+  "oneOf": [
+    {
+      "properties": { "model_type": { "const": "trad_ml" } },
+      "required": ["task_type", "output_label"]
+    },
+    {
+      "properties": { "model_type": { "const": "llm" } },
+      "required": ["interaction_type"]
+    }
+  ]
+}
