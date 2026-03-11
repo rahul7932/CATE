@@ -201,8 +201,8 @@ CATE/
 | `compute_provider_hash(secret, npi_or_provider_id)` | HMAC-SHA256 provider hash |
 | `generate_trace_id()` | New trace ID |
 | `generate_event_id()` | New event ID |
-| `create_trad_ml_event(...)` | Create traditional ML event |
-| `create_llm_event(...)` | Create LLM event |
+| `log_cate_trad_ml(...)` | Log CATE traditional ML event |
+| `log_cate_llm(...)` | Log CATE LLM event |
 | `build_trace(events)` | Build trace from events |
 | `validate_event(event)` | Validate event (returns list of errors) |
 

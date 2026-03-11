@@ -6,8 +6,8 @@ from cate import (
     compute_provider_hash,
     generate_trace_id,
     generate_event_id,
-    create_trad_ml_event,
-    create_llm_event,
+    log_cate_trad_ml,
+    log_cate_llm,
     build_trace,
     validate_event,
 )
@@ -50,8 +50,8 @@ def test_generate_event_id():
     assert len(e) == 16
 
 
-def test_create_trad_ml_event():
-    event = create_trad_ml_event(
+def test_log_cate_trad_ml():
+    event = log_cate_trad_ml(
         trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
@@ -69,8 +69,8 @@ def test_create_trad_ml_event():
     assert "timestamp" in event
 
 
-def test_create_llm_event():
-    event = create_llm_event(
+def test_log_cate_llm():
+    event = log_cate_llm(
         trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
@@ -87,7 +87,7 @@ def test_create_llm_event():
 
 
 def test_build_trace():
-    e1 = create_trad_ml_event(
+    e1 = log_cate_trad_ml(
         trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
@@ -97,7 +97,7 @@ def test_build_trace():
         output_label="high",
         timestamp="2025-03-10T14:32:00Z",
     )
-    e2 = create_llm_event(
+    e2 = log_cate_llm(
         trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
@@ -121,7 +121,7 @@ def test_build_trace_empty_raises():
 
 
 def test_validate_event_valid_trad_ml():
-    event = create_trad_ml_event(
+    event = log_cate_trad_ml(
         trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
@@ -134,7 +134,7 @@ def test_validate_event_valid_trad_ml():
 
 
 def test_validate_event_valid_llm():
-    event = create_llm_event(
+    event = log_cate_llm(
         trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
@@ -168,7 +168,7 @@ def test_validate_event_trad_ml_missing_task_type():
 
 
 def test_validate_event_invalid_probability():
-    event = create_trad_ml_event(
+    event = log_cate_trad_ml(
         trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
