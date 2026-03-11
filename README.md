@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  <strong>Provenance logging for clinical AI</strong> — anonymous, non-remappable patient and provider identifiers
+  <strong>Audit and track clinical AI usage</strong> — provenance logging with anonymous patient and provider identifiers
 </p>
 
 ---
