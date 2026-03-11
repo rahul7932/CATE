@@ -1,6 +1,5 @@
 {
   "id": "evt_def456",
-  "trace_id": "tr_550e8400e29b",
   "timestamp": "2025-03-10T14:35:00Z",
   "model_type": "llm",
   "model_id": "clinical-llm-1.0",

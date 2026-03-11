@@ -4,10 +4,9 @@
   "title": "CATE Event",
   "description": "A single clinical AI interaction (trad ML or LLM)",
   "type": "object",
-  "required": ["id", "trace_id", "timestamp", "model_type", "model_id", "vendor_id", "patient_id_hash", "provider_id_hash"],
+  "required": ["id", "timestamp", "model_type", "model_id", "vendor_id", "patient_id_hash", "provider_id_hash"],
   "properties": {
     "id": { "type": "string", "description": "Unique event ID" },
-    "trace_id": { "type": "string", "description": "Links event to trace (from hospital)" },
     "timestamp": { "type": "string", "format": "date-time", "description": "ISO 8601" },
     "model_type": { "type": "string", "enum": ["trad_ml", "llm"] },
     "model_id": { "type": "string", "description": "Model identifier" },

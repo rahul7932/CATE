@@ -12,28 +12,26 @@ The **hospital (EHR)** supplies `patient_id_hash` and `provider_id_hash` with ea
 
 ```
 Hospital (has patient_id, provider_id, secret)
-    → generates trace_id when session starts
-    → computes hashes
-    → sends request to vendor WITH trace_id, patient_id_hash, provider_id_hash (header or body)
+    → computes hashes (patient_id_hash includes encounter_id)
+    → sends request to vendor WITH patient_id_hash, provider_id_hash (header or body)
     → Vendor receives hashes, runs AI, returns result
     → Vendor logs event using the hashes it received
 ```
 
-**Hospital responsibility:** Generate `trace_id` when a session starts. Compute hashes and include `trace_id`, `patient_id_hash`, `provider_id_hash` on every vendor request.
+**Hospital responsibility:** Compute hashes and include `patient_id_hash`, `provider_id_hash` on every vendor request.
 
 **Vendor responsibility:** Accept these from the caller, include them in each event. Never compute hashes; never receive raw patient ID or secret.
 
-**Recommended request format:** `X-CATE-Trace-ID`, `X-CATE-Patient-ID-Hash`, `X-CATE-Provider-ID-Hash` (or equivalent in body).
+**Recommended request format:** `X-CATE-Patient-ID-Hash`, `X-CATE-Provider-ID-Hash` (or equivalent in body).
 
 ---
 
 ## 2. Trace
 
-A **Trace** groups all AI interactions for a single provider–patient session (e.g., one chart open, one encounter).
+A **Trace** groups all AI interactions for a single provider–patient encounter. The platform derives traces by grouping events on `(provider_id_hash, patient_id_hash)`—`patient_id_hash` already encodes the encounter.
 
 | Field              | Type   | Description                           |
 | ------------------ | ------ | ------------------------------------- |
-| `trace_id`         | string | Unique trace ID (from hospital)      |
 | `patient_id_hash`  | string | Same as events                        |
 | `provider_id_hash` | string | Same as events                        |
 | `start_time`       | string | Earliest event timestamp (derived)    |
@@ -41,11 +39,9 @@ A **Trace** groups all AI interactions for a single provider–patient session (
 | `events`           | array  | CATE events in this trace             |
 | `atna_events`      | array  | ATNA events in this trace (optional)  |
 
-The trace is typically **derived** by the platform from events—no separate "create trace" API.
-
 ### ATNA Integration
 
-Hospital adds `trace_id` to ATNA events when they occur during an active CATE session. For DICOM/RFC 3881 XML: `<CATE><TraceID>tr_550e8400e29b</TraceID></CATE>`. For FHIR AuditEvent: extension URL `https://cate-spec.org/StructureDefinition/trace-id`.
+Hospital adds `patient_id_hash` and `provider_id_hash` to ATNA events when they occur during an active CATE session. Platform correlates by matching these hashes.
 
 ---
 
@@ -58,7 +54,6 @@ One event per AI interaction. Two variants by `model_type`.
 | Field              | Type   | Description                               |
 | ------------------ | ------ | ----------------------------------------- |
 | `id`               | string | Unique event ID                           |
-| `trace_id`         | string | Links event to trace (from hospital)      |
 | `timestamp`        | string | ISO 8601                                  |
 | `model_type`       | string | `trad_ml` or `llm`                         |
 | `model_id`         | string | Model identifier                          |

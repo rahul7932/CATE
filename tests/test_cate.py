@@ -4,7 +4,6 @@ import pytest
 from cate import (
     compute_patient_hash,
     compute_provider_hash,
-    generate_trace_id,
     generate_event_id,
     log_cate_trad_ml,
     log_cate_llm,
@@ -38,12 +37,6 @@ def test_compute_provider_hash_deterministic():
     assert len(h1) == 64
 
 
-def test_generate_trace_id():
-    t = generate_trace_id()
-    assert t.startswith("tr_")
-    assert len(t) == 15  # tr_ + 12 hex chars
-
-
 def test_generate_event_id():
     e = generate_event_id()
     assert e.startswith("evt_")
@@ -52,7 +45,6 @@ def test_generate_event_id():
 
 def test_log_cate_trad_ml():
     event = log_cate_trad_ml(
-        trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
         model_id="sepsis-v2",
@@ -71,7 +63,6 @@ def test_log_cate_trad_ml():
 
 def test_log_cate_llm():
     event = log_cate_llm(
-        trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
         model_id="llm-1",
@@ -88,7 +79,6 @@ def test_log_cate_llm():
 
 def test_build_trace():
     e1 = log_cate_trad_ml(
-        trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
         model_id="m1",
@@ -98,7 +88,6 @@ def test_build_trace():
         timestamp="2025-03-10T14:32:00Z",
     )
     e2 = log_cate_llm(
-        trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
         model_id="m2",
@@ -107,7 +96,6 @@ def test_build_trace():
         timestamp="2025-03-10T14:35:00Z",
     )
     trace = build_trace([e1, e2])
-    assert trace["trace_id"] == "tr_abc"
     assert trace["patient_id_hash"] == "ph1"
     assert trace["provider_id_hash"] == "pr1"
     assert trace["start_time"] == "2025-03-10T14:32:00Z"
@@ -122,7 +110,6 @@ def test_build_trace_empty_raises():
 
 def test_validate_event_valid_trad_ml():
     event = log_cate_trad_ml(
-        trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
         model_id="m1",
@@ -135,7 +122,6 @@ def test_validate_event_valid_trad_ml():
 
 def test_validate_event_valid_llm():
     event = log_cate_llm(
-        trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
         model_id="m1",
@@ -154,7 +140,6 @@ def test_validate_event_missing_required():
 def test_validate_event_trad_ml_missing_task_type():
     event = {
         "id": "evt_1",
-        "trace_id": "tr_1",
         "timestamp": "2025-03-10T14:32:00Z",
         "model_type": "trad_ml",
         "model_id": "m1",
@@ -169,7 +154,6 @@ def test_validate_event_trad_ml_missing_task_type():
 
 def test_validate_event_invalid_probability():
     event = log_cate_trad_ml(
-        trace_id="tr_abc",
         patient_id_hash="ph1",
         provider_id_hash="pr1",
         model_id="m1",

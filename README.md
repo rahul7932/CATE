@@ -47,10 +47,8 @@ pip install -e .
 ### Hospital: Compute identity hashes
 
 ```python
-from cate import compute_patient_hash, compute_provider_hash, generate_trace_id
+from cate import compute_patient_hash, compute_provider_hash
 
-# When a session starts (e.g., provider opens chart)
-trace_id = generate_trace_id()
 patient_id_hash = compute_patient_hash(secret="your-tenant-secret", patient_id="MRN123", encounter_id="enc-456")
 provider_id_hash = compute_provider_hash(secret="your-tenant-secret", npi="1234567890")
 
@@ -63,8 +61,7 @@ Send with each request (headers or body):
 
 | Header | Description |
 |--------|-------------|
-| `X-CATE-Trace-ID` | Trace ID (generated when session starts) |
-| `X-CATE-Patient-ID-Hash` | Patient hash |
+| `X-CATE-Patient-ID-Hash` | Patient hash (includes encounter) |
 | `X-CATE-Provider-ID-Hash` | Provider hash |
 
 ### Vendor: Pull headers and log events
@@ -75,7 +72,6 @@ Extract CATE headers from the incoming request, then pass them into the event:
 from cate import log_cate_trad_ml, log_cate_llm
 
 # Pull CATE context from request headers (hospital sends these)
-trace_id = request.headers.get("X-CATE-Trace-ID")
 patient_id_hash = request.headers.get("X-CATE-Patient-ID-Hash")
 provider_id_hash = request.headers.get("X-CATE-Provider-ID-Hash")
 
@@ -84,7 +80,6 @@ prediction = model.predict(input_data)
 
 # Log event — pass through the header values
 event = log_cate_trad_ml(
-    trace_id=trace_id,
     patient_id_hash=patient_id_hash,
     provider_id_hash=provider_id_hash,
     model_id="sepsis-v2",
@@ -99,14 +94,12 @@ event = log_cate_trad_ml(
 LLM example:
 
 ```python
-trace_id = request.headers.get("X-CATE-Trace-ID")
 patient_id_hash = request.headers.get("X-CATE-Patient-ID-Hash")
 provider_id_hash = request.headers.get("X-CATE-Provider-ID-Hash")
 
 response = llm.generate(prompt)
 
 event = log_cate_llm(
-    trace_id=trace_id,
     patient_id_hash=patient_id_hash,
     provider_id_hash=provider_id_hash,
     model_id="clinical-llm-1.0",
@@ -122,7 +115,7 @@ event = log_cate_llm(
 from cate import build_trace
 
 trace = build_trace(events)
-# trace_id, patient_id_hash, provider_id_hash, start_time, end_time, events
+# patient_id_hash, provider_id_hash, start_time, end_time, events
 ```
 
 ---
@@ -133,8 +126,7 @@ trace = build_trace(events)
 flowchart TB
     subgraph Hospital [Hospital EHR]
         H1[Has patient_id, provider_id, secret]
-        H2[Generates trace_id when session starts]
-        H3[Computes hashes with HMAC-SHA256]
+        H2[Computes hashes with HMAC-SHA256]
     end
 
     subgraph Vendor [Vendor AI]
@@ -144,12 +136,12 @@ flowchart TB
     end
 
     subgraph Platform [Platform]
-        P1[Aggregates events by trace_id]
+        P1[Aggregates events by provider_id_hash + patient_id_hash]
         P2[Builds traces - provider-patient timeline]
         P3[Optionally merges ATNA audit events]
     end
 
-    Hospital -->|trace_id, patient_id_hash, provider_id_hash| Vendor
+    Hospital -->|patient_id_hash, provider_id_hash| Vendor
     Vendor -->|events| Platform
 ```
 
@@ -184,7 +176,7 @@ CATE/
 | Document | Description |
 |----------|-------------|
 | [spec/overview.md](spec/overview.md) | Full spec: request flow, trace, event, identity |
-| [spec/atna-extension.md](spec/atna-extension.md) | ATNA integration: add trace_id to audit logs |
+| [spec/atna-extension.md](spec/atna-extension.md) | ATNA integration: add patient_id_hash, provider_id_hash to audit logs |
 | [schemas/event.schema.json](schemas/event.schema.json) | JSON Schema for events |
 | [schemas/trace.schema.json](schemas/trace.schema.json) | JSON Schema for traces |
 
@@ -196,7 +188,6 @@ CATE/
 |----------|-------------|
 | `compute_patient_hash(secret, patient_id, encounter_id)` | HMAC-SHA256 patient hash |
 | `compute_provider_hash(secret, npi_or_provider_id)` | HMAC-SHA256 provider hash |
-| `generate_trace_id()` | New trace ID |
 | `generate_event_id()` | New event ID |
 | `log_cate_trad_ml(...)` | Log CATE traditional ML event |
 | `log_cate_llm(...)` | Log CATE LLM event |

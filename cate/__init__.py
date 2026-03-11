@@ -75,18 +75,12 @@ def _hmac_sha256_hex(key: bytes, message: bytes) -> str:
     return hmac.new(key, message, hashlib.sha256).hexdigest()
 
 
-def generate_trace_id() -> str:
-    """Generate a new trace ID (UUID-based)."""
-    return f"tr_{uuid.uuid4().hex[:12]}"
-
-
 def generate_event_id() -> str:
     """Generate a new event ID."""
     return f"evt_{uuid.uuid4().hex[:12]}"
 
 
 def log_cate_trad_ml(
-    trace_id: str,
     patient_id_hash: str,
     provider_id_hash: str,
     model_id: str,
@@ -102,7 +96,6 @@ def log_cate_trad_ml(
     Log a CATE Traditional ML event.
 
     Args:
-        trace_id: From hospital (session identifier)
         patient_id_hash: From hospital (supplied with request)
         provider_id_hash: From hospital (supplied with request)
         model_id: Model identifier
@@ -118,7 +111,6 @@ def log_cate_trad_ml(
     """
     event: dict[str, Any] = {
         "id": id or generate_event_id(),
-        "trace_id": trace_id,
         "timestamp": timestamp or _now_iso(),
         "model_type": "trad_ml",
         "model_id": model_id,
@@ -134,7 +126,6 @@ def log_cate_trad_ml(
 
 
 def log_cate_llm(
-    trace_id: str,
     patient_id_hash: str,
     provider_id_hash: str,
     model_id: str,
@@ -149,7 +140,6 @@ def log_cate_llm(
     Log a CATE LLM event.
 
     Args:
-        trace_id: From hospital (session identifier)
         patient_id_hash: From hospital (supplied with request)
         provider_id_hash: From hospital (supplied with request)
         model_id: Model identifier
@@ -164,7 +154,6 @@ def log_cate_llm(
     """
     event: dict[str, Any] = {
         "id": id or generate_event_id(),
-        "trace_id": trace_id,
         "timestamp": timestamp or _now_iso(),
         "model_type": "llm",
         "model_id": model_id,
@@ -186,11 +175,11 @@ def build_trace(events: list[dict[str, Any]]) -> dict[str, Any]:
     """
     Build a trace from a list of events.
 
-    Groups events by trace_id and derives start_time, end_time, patient_id_hash, provider_id_hash
-    from the first event.
+    Groups events by (provider_id_hash, patient_id_hash) and derives start_time, end_time.
+    Events must share the same provider-patient pair.
 
     Args:
-        events: List of CATE events (must share same trace_id)
+        events: List of CATE events (must share same patient_id_hash and provider_id_hash)
 
     Returns:
         Trace dict with events, start_time, end_time
@@ -198,7 +187,6 @@ def build_trace(events: list[dict[str, Any]]) -> dict[str, Any]:
     if not events:
         raise ValueError("events must not be empty")
 
-    trace_id = events[0]["trace_id"]
     patient_id_hash = events[0]["patient_id_hash"]
     provider_id_hash = events[0]["provider_id_hash"]
 
@@ -207,7 +195,6 @@ def build_trace(events: list[dict[str, Any]]) -> dict[str, Any]:
     end_time = max(timestamps)
 
     return {
-        "trace_id": trace_id,
         "patient_id_hash": patient_id_hash,
         "provider_id_hash": provider_id_hash,
         "start_time": start_time,
@@ -223,7 +210,7 @@ def validate_event(event: dict[str, Any]) -> list[str]:
     Does not perform full JSON Schema validation; checks required fields and basic constraints.
     """
     errors: list[str] = []
-    required = ["id", "trace_id", "timestamp", "model_type", "model_id", "vendor_id", "patient_id_hash", "provider_id_hash"]
+    required = ["id", "timestamp", "model_type", "model_id", "vendor_id", "patient_id_hash", "provider_id_hash"]
     for field in required:
         if field not in event:
             errors.append(f"Missing required field: {field}")
@@ -255,7 +242,6 @@ def validate_event(event: dict[str, Any]) -> list[str]:
 __all__ = [
     "compute_patient_hash",
     "compute_provider_hash",
-    "generate_trace_id",
     "generate_event_id",
     "log_cate_trad_ml",
     "log_cate_llm",
