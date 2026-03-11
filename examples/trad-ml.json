@@ -1,0 +1,13 @@
+{
+  "id": "evt_abc123",
+  "trace_id": "tr_550e8400e29b",
+  "timestamp": "2025-03-10T14:32:00Z",
+  "model_type": "trad_ml",
+  "model_id": "sepsis-v2",
+  "vendor_id": "acme",
+  "patient_id_hash": "a1b2c3d4e5f6789012345678901234567890abcdef1234567890abcdef123456",
+  "provider_id_hash": "d4e5f6789012345678901234567890abcdef1234567890abcdef1234567890",
+  "task_type": "risk_prediction",
+  "output_label": "high_risk",
+  "output_probability": 0.87
+}

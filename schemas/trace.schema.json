@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cate-spec.org/schemas/trace.schema.json",
+  "title": "CATE Trace",
+  "description": "Aggregated view of all events for a provider-patient session",
+  "type": "object",
+  "required": ["trace_id", "patient_id_hash", "provider_id_hash"],
+  "properties": {
+    "trace_id": { "type": "string", "description": "Unique trace ID (from hospital)" },
+    "patient_id_hash": { "type": "string", "description": "Anonymous patient identifier" },
+    "provider_id_hash": { "type": "string", "description": "Anonymous provider identifier" },
+    "start_time": { "type": "string", "format": "date-time", "description": "Earliest event timestamp (derived)" },
+    "end_time": { "type": "string", "format": "date-time", "description": "Latest event timestamp (derived)" },
+    "events": {
+      "type": "array",
+      "items": { "type": "object" },
+      "description": "CATE events in this trace"
+    },
+    "atna_events": {
+      "type": "array",
+      "description": "ATNA events in this trace (optional)"
+    }
+  }
+}
