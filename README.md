@@ -129,31 +129,28 @@ trace = build_trace(events)
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│  Hospital (EHR)                                                          │
-│  • Has patient_id, provider_id, secret                                  │
-│  • Generates trace_id when session starts                                │
-│  • Computes hashes with HMAC-SHA256                                      │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    │  trace_id, patient_id_hash, provider_id_hash
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│  Vendor (AI)                                                             │
-│  • Receives hashes from hospital                                         │
-│  • Runs model, returns result                                            │
-│  • Logs CATE event with received hashes                                  │
-└─────────────────────────────────────────────────────────────────────────┘
-                                    │
-                                    │  events
-                                    ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│  Platform                                                                │
-│  • Aggregates events by trace_id                                         │
-│  • Builds traces (provider–patient timeline)                              │
-│  • Optionally merges ATNA audit events                                   │
-└─────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TB
+    subgraph Hospital [Hospital EHR]
+        H1[Has patient_id, provider_id, secret]
+        H2[Generates trace_id when session starts]
+        H3[Computes hashes with HMAC-SHA256]
+    end
+
+    subgraph Vendor [Vendor AI]
+        V1[Receives hashes from hospital]
+        V2[Runs model, returns result]
+        V3[Logs CATE event with received hashes]
+    end
+
+    subgraph Platform [Platform]
+        P1[Aggregates events by trace_id]
+        P2[Builds traces - provider-patient timeline]
+        P3[Optionally merges ATNA audit events]
+    end
+
+    Hospital -->|trace_id, patient_id_hash, provider_id_hash| Vendor
+    Vendor -->|events| Platform
 ```
 
 ---
