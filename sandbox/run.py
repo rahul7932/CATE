@@ -18,7 +18,7 @@ except ImportError:
     import requests
 
 ROOT = Path(__file__).resolve().parent.parent
-FRONTEND_DIR = ROOT / "frontend"
+FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
 APPS = [
     ("Collector", "sandbox/collector/app.py", 8003),
     ("Trad ML", "sandbox/trad_ml/app.py", 8001),
@@ -34,13 +34,14 @@ def port_in_use(port: int) -> bool:
         return s.connect_ex(("127.0.0.1", port)) == 0
 
 
-def wait_for(port: int, timeout: float = 15.0) -> bool:
+def wait_for(port: int, timeout: float = 15.0, path: str = "/health") -> bool:
     start = time.time()
     last_err = None
+    url = f"http://localhost:{port}{path}"
     while time.time() - start < timeout:
         try:
-            r = requests.get(f"http://localhost:{port}/health", timeout=1)
-            if r.status_code == 200:
+            r = requests.get(url, timeout=1)
+            if r.status_code in (200, 304):
                 return True
         except Exception as e:
             last_err = e
@@ -115,7 +116,7 @@ def main():
             stdout=out,
             stderr=out,
         )
-        if not wait_for(3000, timeout=30):
+        if not wait_for(3000, timeout=30, path="/"):
             print("Frontend (port 3000) did not become ready")
             for _, p in procs:
                 p.terminate()

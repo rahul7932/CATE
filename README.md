@@ -120,6 +120,29 @@ trace = build_trace(events)
 
 ---
 
+## Sandbox (Demo)
+
+Run the full demo — Hospital API, Trad ML vendor, LLM vendor, Collector, and frontend:
+
+```bash
+pip install -e .
+python sandbox/run.py
+```
+
+Then open **http://localhost:3000** in your browser.
+
+The sandbox starts:
+- **Hospital** (8000) — EHR API, proxies to vendors
+- **Trad ML** (8001) — Sepsis prediction vendor
+- **LLM** (8002) — Note summarization vendor
+- **Collector** (8003) — Receives CATE events, builds traces
+- **Frontend** (3000) — Demo UI at `sandbox/frontend/`
+
+Press Ctrl+C to stop.
+If ports are in use: `for p in 8000 8001 8002 8003 3000; do lsof -ti :$p | xargs kill -9 2>/dev/null; done`
+
+---
+
 ## Architecture
 
 ```mermaid
@@ -161,6 +184,13 @@ CATE/
 │   └── trace.schema.json
 ├── cate/
 │   └── __init__.py          # Python SDK
+├── sandbox/
+│   ├── run.py               # Start all services
+│   ├── hospital/            # Hospital API (port 8000)
+│   ├── trad_ml/             # Trad ML vendor (8001)
+│   ├── llm/                 # LLM vendor (8002)
+│   ├── collector/           # Event collector (8003)
+│   └── frontend/            # Next.js demo UI (3000)
 ├── examples/
 │   ├── trad-ml.json
 │   ├── llm.json

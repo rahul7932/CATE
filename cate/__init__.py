@@ -16,6 +16,7 @@ from typing import Any, Literal, Optional
 MODEL_TYPES = ("trad_ml", "llm")
 TRAD_ML_TASK_TYPES = ("diagnosis", "risk_prediction", "treatment_recommendation", "other")
 LLM_INTERACTION_TYPES = ("summarization", "drafting", "qa", "documentation", "other")
+ATNA_ACTIONS = ("chart_open", "view_labs", "view_meds", "document_access", "order_entry", "other")
 
 
 def compute_patient_hash(
@@ -167,6 +168,48 @@ def log_cate_llm(
     return event
 
 
+def log_cate_atna(
+    patient_id_hash: str,
+    provider_id_hash: str,
+    action: Literal["chart_open", "view_labs", "view_meds", "document_access", "order_entry", "other"],
+    *,
+    id: Optional[str] = None,
+    timestamp: Optional[str] = None,
+    resource_type: Optional[str] = None,
+) -> dict[str, Any]:
+    """
+    Log an ATNA-style audit event with CATE extensions.
+
+    Per the ATNA extension spec, hospitals emit these when actions occur during
+    an active session (e.g., provider opened chart, viewed labs). The platform
+    correlates by matching patient_id_hash and provider_id_hash to CATE events.
+
+    Args:
+        patient_id_hash: From hospital (same as CATE)
+        provider_id_hash: From hospital (same as CATE)
+        action: chart_open, view_labs, view_meds, document_access, order_entry, other
+        id: Optional event ID (auto-generated if omitted)
+        timestamp: Optional ISO 8601 (now if omitted)
+        resource_type: Optional resource type (e.g., "Patient", "Observation")
+
+    Returns:
+        Event dict ready for JSON serialization
+    """
+    event: dict[str, Any] = {
+        "id": id or generate_event_id(),
+        "timestamp": timestamp or _now_iso(),
+        "model_type": "atna",
+        "model_id": "atna-audit",
+        "vendor_id": "hospital-ehr",
+        "patient_id_hash": patient_id_hash,
+        "provider_id_hash": provider_id_hash,
+        "action": action,
+    }
+    if resource_type is not None:
+        event["resource_type"] = resource_type
+    return event
+
+
 def _now_iso() -> str:
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
 
@@ -194,12 +237,15 @@ def build_trace(events: list[dict[str, Any]]) -> dict[str, Any]:
     start_time = min(timestamps)
     end_time = max(timestamps)
 
+    # Sort events chronologically for unified timeline
+    sorted_events = sorted(events, key=lambda e: e["timestamp"])
+
     return {
         "patient_id_hash": patient_id_hash,
         "provider_id_hash": provider_id_hash,
         "start_time": start_time,
         "end_time": end_time,
-        "events": events,
+        "events": sorted_events,
     }
 
 
@@ -233,7 +279,12 @@ def validate_event(event: dict[str, Any]) -> list[str]:
         elif event["interaction_type"] not in LLM_INTERACTION_TYPES:
             errors.append(f"interaction_type must be one of {LLM_INTERACTION_TYPES}")
 
-    if event.get("model_type") not in MODEL_TYPES:
+    if event.get("model_type") == "atna":
+        if "action" not in event:
+            errors.append("atna events require action")
+        elif event["action"] not in ATNA_ACTIONS:
+            errors.append(f"action must be one of {ATNA_ACTIONS}")
+    elif event.get("model_type") not in MODEL_TYPES:
         errors.append(f"model_type must be one of {MODEL_TYPES}")
 
     return errors
@@ -245,9 +296,11 @@ __all__ = [
     "generate_event_id",
     "log_cate_trad_ml",
     "log_cate_llm",
+    "log_cate_atna",
     "build_trace",
     "validate_event",
     "MODEL_TYPES",
     "TRAD_ML_TASK_TYPES",
     "LLM_INTERACTION_TYPES",
+    "ATNA_ACTIONS",
 ]
