@@ -1,5 +1,6 @@
 """
 Collector sandbox app - receives CATE events, builds traces.
+Accepts fhir_access, hl7_access, atna, trad_ml, llm event types.
 """
 
 import sys
@@ -23,13 +24,18 @@ def add_event(event: dict | None = Body(None)):
 
 @app.get("/traces")
 def get_traces(patient_id_hash: str | None = None, provider_id_hash: str | None = None):
-    if not patient_id_hash or not provider_id_hash:
-        raise HTTPException(400, "patient_id_hash and provider_id_hash required")
+    if not patient_id_hash:
+        raise HTTPException(400, "patient_id_hash required")
 
-    matching = [
-        e for e in events
-        if e.get("patient_id_hash") == patient_id_hash and e.get("provider_id_hash") == provider_id_hash
-    ]
+    if provider_id_hash:
+        matching = [
+            e for e in events
+            if e.get("patient_id_hash") == patient_id_hash
+            and (e.get("provider_id_hash") is None or e.get("provider_id_hash") == provider_id_hash)
+        ]
+    else:
+        matching = [e for e in events if e.get("patient_id_hash") == patient_id_hash]
+
     if not matching:
         return {"error": "No events found", "trace": None}
 

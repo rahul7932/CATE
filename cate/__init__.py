@@ -168,6 +168,43 @@ def log_cate_llm(
     return event
 
 
+def log_fhir_access(
+    vendor_id: str,
+    resource_type: str,
+    patient_id_hash: str,
+    fhir_action: Literal["read", "search", "create", "update", "delete"],
+    http_method: str,
+    *,
+    id: Optional[str] = None,
+    timestamp: Optional[str] = None,
+) -> dict[str, Any]:
+    """
+    Log a FHIR access event (from middleware interception).
+
+    Args:
+        vendor_id: Caller identity from auth or header
+        resource_type: Patient, Observation, Condition, etc.
+        patient_id_hash: Hashed from extracted patient ref
+        fhir_action: read, search, create, update, delete
+        http_method: GET, POST, PUT, PATCH, DELETE
+        id: Optional event ID (auto-generated if omitted)
+        timestamp: Optional ISO 8601 (now if omitted)
+
+    Returns:
+        Event dict ready for JSON serialization
+    """
+    return {
+        "id": id or generate_event_id(),
+        "timestamp": timestamp or _now_iso(),
+        "event_type": "fhir_access",
+        "vendor_id": vendor_id,
+        "resource_type": resource_type,
+        "patient_id_hash": patient_id_hash,
+        "fhir_action": fhir_action,
+        "http_method": http_method,
+    }
+
+
 def log_cate_atna(
     patient_id_hash: str,
     provider_id_hash: str,
@@ -231,7 +268,7 @@ def build_trace(events: list[dict[str, Any]]) -> dict[str, Any]:
         raise ValueError("events must not be empty")
 
     patient_id_hash = events[0]["patient_id_hash"]
-    provider_id_hash = events[0]["provider_id_hash"]
+    provider_id_hash = next((e.get("provider_id_hash") for e in events if e.get("provider_id_hash") is not None), None)
 
     timestamps = [e["timestamp"] for e in events]
     start_time = min(timestamps)
@@ -240,13 +277,28 @@ def build_trace(events: list[dict[str, Any]]) -> dict[str, Any]:
     # Sort events chronologically for unified timeline
     sorted_events = sorted(events, key=lambda e: e["timestamp"])
 
-    return {
+    result: dict[str, Any] = {
         "patient_id_hash": patient_id_hash,
-        "provider_id_hash": provider_id_hash,
         "start_time": start_time,
         "end_time": end_time,
         "events": sorted_events,
     }
+    if provider_id_hash is not None:
+        result["provider_id_hash"] = provider_id_hash
+    return result
+
+
+def build_fhir_trace(events: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    Build a trace from FHIR access events (patient_id_hash only, no provider_id_hash).
+
+    Args:
+        events: List of fhir_access or hl7_access events
+
+    Returns:
+        Trace dict with events, start_time, end_time
+    """
+    return build_trace(events)
 
 
 def validate_event(event: dict[str, Any]) -> list[str]:
@@ -297,6 +349,7 @@ __all__ = [
     "log_cate_trad_ml",
     "log_cate_llm",
     "log_cate_atna",
+    "log_fhir_access",
     "build_trace",
     "validate_event",
     "MODEL_TYPES",

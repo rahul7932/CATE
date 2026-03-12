@@ -1,6 +1,7 @@
 """
 Clinical LLM sandbox app - mock note summarization vendor.
-Pulls CATE headers, runs mock summarization, logs CATE event to collector.
+Calls FHIR via middleware to fetch notes (optional), runs mock summarization.
+Middleware logs FHIR access; vendor no longer logs CATE events.
 """
 
 import sys
@@ -8,20 +9,19 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
-from fastapi import FastAPI, Header
+from fastapi import FastAPI
 from pydantic import BaseModel
 import requests
-from cate import log_cate_llm
 
 app = FastAPI(title="CATE LLM")
-COLLECTOR_URL = "http://localhost:8003/events"
+FHIR_URL = "http://localhost:8080"
 
 
-def _send_event(event: dict):
-    try:
-        requests.post(COLLECTOR_URL, json=event, timeout=2)
-    except Exception:
-        pass
+class SummarizeBody(BaseModel):
+    patient_id: str = "MRN001"
+    provider_id: str = "NPI123"
+    encounter_id: str = "enc-001"
+    note: str = ""
 
 
 @app.get("/health")
@@ -29,33 +29,27 @@ def health():
     return {"status": "ok"}
 
 
-class SummarizeBody(BaseModel):
-    note: str = ""
-
-
 @app.post("/summarize")
-def summarize(
-    x_cate_patient_id_hash: str | None = Header(None, alias="X-CATE-Patient-ID-Hash"),
-    x_cate_provider_id_hash: str | None = Header(None, alias="X-CATE-Provider-ID-Hash"),
-    body: SummarizeBody | None = None,
-):
-    patient_id_hash = x_cate_patient_id_hash
-    provider_id_hash = x_cate_provider_id_hash
-
+def summarize(body: SummarizeBody | None = None):
+    patient_id = (body.patient_id if body else None) or "MRN001"
     note = (body.note if body else "") or ""
+
+    if not note:
+        headers = {"X-Vendor-ID": "sandbox-llm"}
+        fhir_url = f"{FHIR_URL}/Observation?patient=Patient/{patient_id}"
+        try:
+            r = requests.get(fhir_url, headers=headers, timeout=5)
+            r.raise_for_status()
+            obs = r.json()
+            entries = obs.get("entry", []) if isinstance(obs, dict) else []
+            note = " ".join(
+                str(e.get("resource", {}).get("valueQuantity", {}).get("value", ""))
+                for e in entries[:3]
+            ) or "No observations"
+        except requests.RequestException:
+            note = "Patient presents with fever. Labs show elevated WBC."
+
     summary = f"[Mock summary] Key points: fever, elevated WBC. ({len(note)} chars in input)"
-
-    if patient_id_hash and provider_id_hash:
-        event = log_cate_llm(
-            patient_id_hash=patient_id_hash,
-            provider_id_hash=provider_id_hash,
-            model_id="clinical-llm-1.0",
-            vendor_id="sandbox-llm",
-            interaction_type="summarization",
-            output_token_count=len(summary.split()),
-        )
-        _send_event(event)
-
     return {"summary": summary}
 
 

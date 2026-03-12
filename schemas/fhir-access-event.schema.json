@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cate-spec.org/schemas/fhir-access-event.schema.json",
+  "title": "CATE FHIR Access Event",
+  "description": "A single FHIR API access event logged by the middleware",
+  "type": "object",
+  "required": ["id", "timestamp", "event_type", "vendor_id", "resource_type", "patient_id_hash", "fhir_action", "http_method"],
+  "properties": {
+    "id": { "type": "string", "description": "Unique event ID" },
+    "timestamp": { "type": "string", "format": "date-time", "description": "ISO 8601" },
+    "event_type": { "type": "string", "const": "fhir_access" },
+    "vendor_id": { "type": "string", "description": "Caller identity from auth or header" },
+    "resource_type": { "type": "string", "description": "Patient, Observation, Condition, etc." },
+    "patient_id_hash": { "type": "string", "description": "Hashed from extracted patient ref" },
+    "fhir_action": { "type": "string", "description": "read, search, create, update, delete" },
+    "http_method": { "type": "string", "description": "GET, POST, PUT, PATCH, DELETE" }
+  }
+}

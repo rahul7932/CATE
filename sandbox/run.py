@@ -21,6 +21,8 @@ ROOT = Path(__file__).resolve().parent.parent
 FRONTEND_DIR = Path(__file__).resolve().parent / "frontend"
 APPS = [
     ("Collector", "sandbox/collector/app.py", 8003),
+    ("Mock FHIR", "sandbox/fhir/app.py", 8081),
+    ("Middleware", "sandbox/middleware/app.py", 8080),
     ("Trad ML", "sandbox/trad_ml/app.py", 8001),
     ("LLM", "sandbox/llm/app.py", 8002),
     ("Hospital", "sandbox/hospital/app.py", 8000),
@@ -59,7 +61,7 @@ def main():
         print("Port(s) already in use. Stop any existing sandbox processes first:")
         for name, port in used:
             print(f"  {name}: port {port}")
-        print("\nTo free ports: for p in 8000 8001 8002 8003 3000; do lsof -ti :$p | xargs kill -9 2>/dev/null; done")
+        print("\nTo free ports: for p in 8000 8001 8002 8003 8080 8081 3000; do lsof -ti :$p | xargs kill -9 2>/dev/null; done")
         sys.exit(1)
 
     procs = []
