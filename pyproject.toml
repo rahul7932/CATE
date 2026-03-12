@@ -14,6 +14,7 @@ keywords = ["clinical", "healthcare", "ai", "telemetry", "provenance", "audit"]
 
 [project.optional-dependencies]
 dev = ["pytest"]
+sandbox = ["fastapi", "uvicorn", "requests"]
 
 [tool.setuptools.packages.find]
 where = ["."]

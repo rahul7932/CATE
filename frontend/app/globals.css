@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: 13 19 33;
+    --card: 23 32 51;
+    --border: 45 55 72;
+    --muted: 148 163 184;
+    --accent: 0 212 170;
+    --accent-dim: 10 61 50;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased;
+    background: linear-gradient(160deg, #0d1321 0%, #0f172a 50%, #0d1321 100%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-slate-700/60 bg-slate-900/80 backdrop-blur-sm;
+    box-shadow: 0 4px 24px -4px rgba(0, 0, 0, 0.4);
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-teal-500 px-4 py-2.5 font-medium text-slate-950 transition-all hover:bg-teal-400 hover:shadow-[0_0_20px_rgba(0,212,170,0.3)] active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-800/60 px-4 py-2.5 font-medium text-slate-200 transition-all hover:border-slate-500 hover:bg-slate-700/60 active:scale-[0.98];
+  }
+
+  .input-field {
+    @apply w-full rounded-lg border border-slate-600 bg-slate-800/50 px-3 py-2.5 text-slate-100 placeholder-slate-500 outline-none transition-colors focus:border-teal-500/60 focus:ring-2 focus:ring-teal-500/20;
+  }
+}
